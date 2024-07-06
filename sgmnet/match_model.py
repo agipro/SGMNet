@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 eps=1e-8
 
@@ -16,10 +17,10 @@ def sinkhorn(M,r,c,iteration):
 def sink_algorithm(M,dustbin,iteration):
     M = torch.cat([M, dustbin.expand([M.shape[0], M.shape[1], 1])], dim=-1)
     M = torch.cat([M, dustbin.expand([M.shape[0], 1, M.shape[2]])], dim=-2)
-    r = torch.ones([M.shape[0], M.shape[1] - 1],device='cuda')
-    r = torch.cat([r, torch.ones([M.shape[0], 1],device='cuda') * M.shape[1]], dim=-1)
-    c = torch.ones([M.shape[0], M.shape[2] - 1],device='cuda')
-    c = torch.cat([c, torch.ones([M.shape[0], 1],device='cuda') * M.shape[2]], dim=-1)
+    r = torch.ones([M.shape[0], M.shape[1] - 1],device=device)
+    r = torch.cat([r, torch.ones([M.shape[0], 1],device=device) * M.shape[1]], dim=-1)
+    c = torch.ones([M.shape[0], M.shape[2] - 1],device=device)
+    c = torch.cat([c, torch.ones([M.shape[0], 1],device=device) * M.shape[2]], dim=-1)
     p=sinkhorn(M,r,c,iteration)
     return p
 
@@ -28,7 +29,7 @@ def seeding(nn_index1,nn_index2,x1,x2,topk,match_score,confbar,nms_radius,use_mc
     
     #apply mutual check before nms
     if use_mc:
-        mask_not_mutual=nn_index2.gather(dim=-1,index=nn_index1)!=torch.arange(nn_index1.shape[1],device='cuda')
+        mask_not_mutual=nn_index2.gather(dim=-1,index=nn_index1)!=torch.arange(nn_index1.shape[1],device=device)
         match_score[mask_not_mutual]=-1
     #NMS
     pos_dismat1=((x1.norm(p=2,dim=-1)**2).unsqueeze_(-1)+(x1.norm(p=2,dim=-1)**2).unsqueeze_(-2)-2*(x1@x1.transpose(1,2))).abs_().sqrt_()
